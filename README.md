@@ -8,7 +8,7 @@ Make the python file executable and run it as follows:
 
 ```
 $ chmod +x ADSB.py
-$ ./ADSB.py -m MODE -i INTERFACE [--ssid SSID]
+$ ./ADSB.py -m MODE -i INTERFACE
 ```
 First switch your interface into monitor mode as follows:
 ```
@@ -17,17 +17,23 @@ $ airmon-ng start wlan0
 Send: Usage example:
 
 ```
-$ ./ADSB.py -m send -i wlan0mon --ssid TestAP
-[I] INFO: Beacon Frame created with SSID: 'TestAP'
+$ ./ADSB.py -m send -i wlan0mon
 [I] INFO: Transmitting Beacon through interface 'wlan0mon'
 [+] SUCCESS: Broadcast Started!
 
 ```
 
 Recv: Usage example:
-###### TODO: Complete ADS-B parsing
 ```
 $ ./ADSB.py -m recv -i wlan1mon
+[+] SUCCESS: ADS-B Packet received!
+[I] INFO: DF -> 17
+[I] INFO: CA -> 5
+[I] INFO: ICAO -> 0xABCDEF
+[I] INFO: DATA ->XXXXXX
+[I] INFO: TYPE CODE -> 1
+[I] INFO: PARITY -> 567890
+
 ```
 
 To view the help:
@@ -42,7 +48,6 @@ optional arguments:
   -m MODE, --mode MODE  Mode: This can be "recv" or "send" (Default is recv)
   -i INTERFACE, --interface INTERFACE
                         Name of the interface to be used
-  --ssid SSID           Your ADS-B Broadcast name
 
 [*] Author: 0xBADB01
 
