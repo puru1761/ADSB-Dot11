@@ -151,38 +151,3 @@ class ADSB_SDR_Thread(threading.Thread):
                 log.info("TYPE CODE -> "+adsb_packet["DATA"]["TYPE"])
                 log.info("PARITY -> "+adsb_packet["PARITY"])
                 """
-
-## This is a testing script for our library
-if __name__=="__main__":
-
-    main_page = "\033[94m[X]\033[0m ADS-B Tranceiver over WiFi \033[94m[X]\033[0m\n"
-
-    parser = argparse.ArgumentParser(description=main_page, epilog="\n\033[93m[*]\033[0m Author: 0xBADB01\n\n")
-    
-    parser.add_argument('-m', '--mode', help='Mode: This can be "recv" or "send" (Default is recv)', default="recv", required=True)
-    parser.add_argument('-i', '--interface', help='Name of the interface to be used', required=True)
-
-    arguments = parser.parse_args()
-
-    if arguments.mode == "send":
-        
-        sdr = ADSB_SDR_Thread(arguments.mode, arguments.interface)
-        sdr.updateMSG(ADSB_MSG().IdentMsg("5", "5", "5", "5", "5"))
-
-        sdr.start()
-        time.sleep(2)
-        sdr.stop()
-        
-        sdr = ADSB_SDR_Thread(arguments.mode, arguments.interface)
-        sdr.updateMSG(ADSB_MSG().VelocityMsg("8","8","8","8","8"))
-        sdr.start()
-        time.sleep(2)
-        sdr.stop()
-    
-    else:
-
-        sdr = ADSB_SDR_Thread(arguments.mode, arguments.interface)
-        sdr.start()
-        time.sleep(10)
-        print sdr.ADSB_Packets
-        sdr.stop()
