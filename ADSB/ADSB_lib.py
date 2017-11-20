@@ -9,9 +9,7 @@ import json
 from logs.logger import log
 import threading
 import time
-from ADSB.ADSB_lib import ADSB_SDR_Thread, ADSB_MSG
 
-"""
 class ADSB_MSG():
 
     def __init__(self):
@@ -143,7 +141,7 @@ class ADSB_SDR_Thread(threading.Thread):
 
                 self.ADSB_Packets.append(json.loads(pkt.load[15:]))
                
-                
+                """
                 adsb_packet = json.loads(pkt.load[15:])
                 log.success("ADS-B Packet received!")
                 log.info("DF -> "+adsb_packet["DF"])
@@ -152,9 +150,8 @@ class ADSB_SDR_Thread(threading.Thread):
                 log.info("DATA ->"+adsb_packet["DATA"]["DATA"])
                 log.info("TYPE CODE -> "+adsb_packet["DATA"]["TYPE"])
                 log.info("PARITY -> "+adsb_packet["PARITY"])
-                
+                """
 
-"""
 ## This is a testing script for our library
 if __name__=="__main__":
 
