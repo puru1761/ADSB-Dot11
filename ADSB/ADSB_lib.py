@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import Dot11, Dot11Beacon, Dot11Elt, RadioTap, sendp, hexdump, sniff, send
@@ -9,70 +7,23 @@ import json
 from logs.logger import log
 import threading
 import time
+import pyModeS as pms
+import ADSB_Encoder
 
 class ADSB_MSG():
 
     def __init__(self):
 
-        self.msg = {
-                    "DF":"", 
-                    "CA":"", 
-                    "ICAO":"", 
-                    "DATA":{"DATA":"", "TYPE":""}, 
-                    "PARITY":""
-                    }
+        self.even_msg = ''
+        self.odd_msg = ''
+
+    def create(self, icao, latitude, longitude, altitude):
+
+        self.even_msg, self.odd_msg = ADSB_Encoder.create_message(icao, latitude, longitude, altitude)
+
+        return self.even_msg, self.odd_msg
 
 
-    def IdentMsg(self, DF, CA, ICAO, data, parity):
-        
-        self.msg["DF"] = DF
-        self.msg["CA"] = CA
-        self.msg["ICAO"] = ICAO
-        self.msg["DATA"]["DATA"] = data
-        self.msg["DATA"]["TYPE"] = "1"
-        self.msg["PARITY"] = parity
-
-        return json.dumps(self.msg)
-
-    def PositionMsg_Baro(self, DF, CA, ICAO, data, parity):
-        self.msg["DF"] = DF
-        self.msg["CA"] = CA
-        self.msg["ICAO"] = ICAO
-        self.msg["DATA"]["DATA"] = data
-        self.msg["DATA"]["TYPE"] = "9"
-        self.msg["PARITY"] = parity
-
-        return json.dumps(self.msg)
-
-    def PositionMsg_surface(self, DF, CA, ICAO, data, parity):
-        self.msg["DF"] = DF
-        self.msg["CA"] = CA
-        self.msg["ICAO"] = ICAO
-        self.msg["DATA"]["DATA"] = data
-        self.msg["DATA"]["TYPE"] = "5"
-        self.msg["PARITY"] = parity
-
-        return json.dumps(self.msg)
-
-    def PositionMsg_GNSS(self, DF, CA, ICAO, data, parity):
-        self.msg["DF"] = DF
-        self.msg["CA"] = CA
-        self.msg["ICAO"] = ICAO
-        self.msg["DATA"]["DATA"] = data
-        self.msg["DATA"]["TYPE"] = "20"
-        self.msg["PARITY"] = parity
-
-        return json.dumps(self.msg)
-
-    def VelocityMsg(self, DF, CA, ICAO, data, parity):
-        self.msg["DF"] = DF
-        self.msg["CA"] = CA
-        self.msg["ICAO"] = ICAO
-        self.msg["DATA"]["DATA"] = data
-        self.msg["DATA"]["TYPE"] = "19"
-        self.msg["PARITY"] = parity
-
-        return json.dumps(self.msg)
 
 class ADSB_SDR_Thread(threading.Thread):
 
@@ -81,8 +32,10 @@ class ADSB_SDR_Thread(threading.Thread):
 
         self.mode = mode
         self.interface = interface
-        self.msg = ADSB_MSG()
-        self.ADSB_Packets = []
+        self.odd_msg = ''
+        self.even_msg = ''
+        self.msg = ''
+        self.position = ()
 
         if self.mode == "send":
 
@@ -90,6 +43,7 @@ class ADSB_SDR_Thread(threading.Thread):
             log.success("Broadcast Started")
         
         self.stopFlag = threading.Event()
+        self.pos_change_flag = threading.Event()
 
     def stop(self):
         self.stopFlag.set()
@@ -101,10 +55,22 @@ class ADSB_SDR_Thread(threading.Thread):
         
         while not self.is_stopped("Test"):
             if self.mode == "send":
-                time.sleep(0.1)
-                self.startBroadcast(self.interface, "ADSB", self.msg)
+                time.sleep(0.5)
+
+                if self.even_msg and self.odd_msg: 
+                    self.startBroadcast(self.interface, "ADSB", self.even_msg)
+                    self.startBroadcast(self.interface, "ADSB", self.odd_msg)
+                else:
+                    log.err("Please Set the message first!")
+
             elif self.mode == "recv":
                 self.recvBroadcast(self.interface)
+
+    def change_pos(self):
+        self.pos_change_flag.set()
+
+    def is_pos_changed(self):
+        return self.pos_change_flag.is_set()
 
     def startBroadcast(self, interface, ssid, msg):
         
@@ -123,8 +89,9 @@ class ADSB_SDR_Thread(threading.Thread):
         sendp(frame, iface=interface, inter=0.10, loop=0, verbose=False)
 
 
-    def updateMSG(self, msg):
-        self.msg = msg
+    def updateMsg(self, even_msg, odd_msg):
+        self.even_msg = ''.join(format(x, '02x') for x in even_msg)
+        self.odd_msg = ''.join(format(y, '02x') for y in odd_msg)
     
     def recvBroadcast(self, interface):
 
@@ -139,15 +106,35 @@ class ADSB_SDR_Thread(threading.Thread):
 
             if "ADSB" in pkt.load:
 
-                self.ADSB_Packets.append(json.loads(pkt.load[15:]))
-               
-                """
-                adsb_packet = json.loads(pkt.load[15:])
-                log.success("ADS-B Packet received!")
-                log.info("DF -> "+adsb_packet["DF"])
-                log.info("CA -> "+adsb_packet["CA"])
-                log.info("ICAO -> "+adsb_packet["ICAO"])
-                log.info("DATA ->"+adsb_packet["DATA"]["DATA"])
-                log.info("TYPE CODE -> "+adsb_packet["DATA"]["TYPE"])
-                log.info("PARITY -> "+adsb_packet["PARITY"])
-                """
+                msg = pkt.load[15:]
+                signal_bits = pms.hex2bin(msg)
+
+                type_code = int(signal_bits[32:37], 2)
+
+                if type_code == 11:
+                    position = self.calcPosition(msg)
+                    if position and position != self.position:
+                        self.position = position
+                        print self.position
+
+    def calcPosition(self, data):
+       
+        signal_bits = pms.hex2bin(data)
+        message = signal_bits[32:]
+
+        if message[21] == '0':
+            self.even_msg = data
+        elif message[21] == '1':
+            self.odd_msg = data
+
+        if self.even_msg and self.odd_msg:
+
+            altitude = pms.adsb.altitude(self.even_msg)
+
+            latitude, longitude = pms.adsb.airborne_position(self.even_msg, self.odd_msg, 0, 0)
+            self.even_msg = '' 
+            self.odd_msg = ''
+
+            return (latitude, longitude, altitude)
+            
+        

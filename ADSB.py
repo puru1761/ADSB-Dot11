@@ -26,14 +26,16 @@ if __name__=="__main__":
     if arguments.mode == "send":
         
         sdr = ADSB_SDR_Thread(arguments.mode, arguments.interface)
-        sdr.updateMSG(ADSB_MSG().IdentMsg("5", "5", "5", "5", "5"))
+        even_msg, odd_msg = ADSB_MSG().create("0xABCDEF", 12.34, 56.78, 9999.0)
+        sdr.updateMsg(even_msg, odd_msg)
 
         sdr.start()
         time.sleep(2)
         sdr.stop()
         
         sdr = ADSB_SDR_Thread(arguments.mode, arguments.interface)
-        sdr.updateMSG(ADSB_MSG().VelocityMsg("8","8","8","8","8"))
+        even_msg, odd_msg = ADSB_MSG().create("0xABCDEF", 34.56, 67.89, 9999.0)
+        sdr.updateMsg(even_msg, odd_msg)
         sdr.start()
         time.sleep(2)
         sdr.stop()
@@ -43,5 +45,4 @@ if __name__=="__main__":
         sdr = ADSB_SDR_Thread(arguments.mode, arguments.interface)
         sdr.start()
         time.sleep(10)
-        print sdr.ADSB_Packets
         sdr.stop()
