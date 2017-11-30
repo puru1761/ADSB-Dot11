@@ -52,7 +52,7 @@ sdr_recv = ADSB_SDR_Thread('recv', interface)
 sdr_recv.start()
 ```
 
-Here the receiving thread will start and will print out the current location of the aircraft to stdout by decoding the received messages and calculating the aircraft location (latitude, longitude, altitude.
+Here the receiving thread will start and will print out the current location of the aircraft to stdout by decoding the received messages and calculating the aircraft location (latitude, longitude, altitude).
 
 The provided script ```ADSB.py``` is a testing script to check if the library works. It can be run to send and receive test ADS-B messages.
 
