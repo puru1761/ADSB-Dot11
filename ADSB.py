@@ -45,4 +45,7 @@ if __name__=="__main__":
         sdr = ADSB_SDR_Thread(arguments.mode, arguments.interface)
         sdr.start()
         time.sleep(10)
+        pos_stream = sdr.getPositionStream()
+        for pos in pos_stream:
+            print pos
         sdr.stop()

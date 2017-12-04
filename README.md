@@ -27,7 +27,7 @@ $ pip install pyModeS
 Depending on the interface and the mode used to run the calling script, we can call a variety of functions from the ```ADSB_lib``` API. These functions along with the imports are listed below as follows:
 
 First, import the required classes from ```ADSB.ADSB_lib```
-```
+```python
 from ADSB.ADSB_lib import ADSB_SDR_Thread, ADSB_MSG
 ```
 
@@ -53,6 +53,15 @@ sdr_recv.start()
 ```
 
 Here the receiving thread will start and will print out the current location of the aircraft to stdout by decoding the received messages and calculating the aircraft location (latitude, longitude, altitude).
+
+In the receiving thread, all positional values of the drone can be received by calling the function ```getPositionStream()```. It will return a list of tuples of the form (lat, long, alt, datetime). This can be done as follows:
+```python
+position_stream = sdr_recv.getPositionStream()
+for pos in position_stream:
+	print pos
+```
+
+The above code snippet will print out all the positions the drone has taken since the receiver was started.
 
 The provided script ```ADSB.py``` is a testing script to check if the library works. It can be run to send and receive test ADS-B messages.
 
