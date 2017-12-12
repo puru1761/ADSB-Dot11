@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
@@ -27,6 +27,7 @@ if __name__=="__main__":
         
         sdr = ADSB_SDR_Thread(arguments.mode, arguments.interface)
         even_msg, odd_msg = ADSB_MSG().create("0xABCDEF", 12.34, 56.78, 9999.0)
+        print(''.join(format(x, '02x') for x in even_msg), ''.join(format(y, '02x') for y in odd_msg))
         sdr.updateMsg(even_msg, odd_msg)
 
         sdr.start()
@@ -47,5 +48,6 @@ if __name__=="__main__":
         time.sleep(10)
         pos_stream = sdr.getPositionStream()
         for pos in pos_stream:
-            print pos
+            print(pos)
+
         sdr.stop()

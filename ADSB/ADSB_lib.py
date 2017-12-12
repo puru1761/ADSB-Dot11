@@ -8,7 +8,7 @@ from logs.logger import log
 import threading
 import time
 import pyModeS as pms
-import ADSB_Encoder
+from ADSB import ADSB_Encoder
 from datetime import datetime
 
 class ADSB_MSG():
@@ -86,7 +86,7 @@ class ADSB_SDR_Thread(threading.Thread):
 
         rsn = Dot11Elt(ID='RSNinfo', info=(msg))
 
-        frame = RadioTap()/dot11/beacon/essid/rsn
+        frame = RadioTap(present=0)/dot11/beacon/essid/rsn
 
 
         sendp(frame, iface=interface, inter=0.10, loop=0, verbose=False)
@@ -107,7 +107,7 @@ class ADSB_SDR_Thread(threading.Thread):
 
         if pkt.haslayer(Dot11) and pkt.type == 2 and pkt.subtype == 8 and pkt.addr2 == "22:22:22:22:22:22":
 
-            if "ADSB" in pkt.load:
+            if bytes("ADSB", 'utf-8') in pkt.load:
 
                 msg = json.loads(pkt.load[15:])
                 signal_bits_even = pms.hex2bin(msg["even"])

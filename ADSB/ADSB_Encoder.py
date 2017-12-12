@@ -30,14 +30,14 @@ def encode_alt_modes(alt, bit13):
     encalt = (int(alt) + 1000) / 25
 
     if bit13 is True:
-        tmp1 = (encalt & 0xfe0) << 2
-        tmp2 = (encalt & 0x010) << 1
+        tmp1 = int(encalt & 0xfe0) << 2
+        tmp2 = int(encalt & 0x010) << 1
 
     else:
-        tmp1 = (encalt & 0xff8) << 1
+        tmp1 = (int(encalt) & 0xff8) << 1
         tmp2 = 0
 
-    return (encalt & 0x0F) | tmp1 | tmp2 | (mbit << 6) | (qbit << 4)
+    return (int(encalt) & 0x0F) | tmp1 | tmp2 | (mbit << 6) | (qbit << 4)
 
 latz = 15
 
